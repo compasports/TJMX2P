@@ -3,21 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <title>Panel de Ajustes MLB</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-    body { background:#1a1a1a; color:white; font-family:Arial; padding:20px; }
-    h2 { color:#26c6da; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border:1px solid #555; padding:10px; text-align:center; }
-    input { width:80px; padding:4px; }
-    button { padding:10px 20px; background:#26c6da; border:none; color:black; font-weight:bold; cursor:pointer; }
-    button:hover { background:#00acc1; }
+    body {
+        background:#1a1a1a;
+        color:white;
+        font-family:Arial, sans-serif;
+        padding:15px;
+        margin:0;
+    }
+
+    h2 {
+        color:#26c6da;
+        font-size:1.5rem;
+        text-align:center;
+        margin-bottom:10px;
+    }
+
+    p {
+        text-align:center;
+        font-size:0.9rem;
+        color:#bbb;
+    }
+
+    table {
+        width:100%;
+        border-collapse:collapse;
+        margin-top:15px;
+    }
+
+    th, td {
+        border:1px solid #444;
+        padding:8px;
+        text-align:center;
+        font-size:0.9rem;
+    }
+
+    th {
+        background:#222;
+    }
+
+    input {
+        width:70px;
+        padding:5px;
+        border-radius:4px;
+        border:1px solid #666;
+        background:#333;
+        color:white;
+        text-align:center;
+    }
+
+    button {
+        width:100%;
+        padding:12px;
+        background:#26c6da;
+        border:none;
+        color:black;
+        font-weight:bold;
+        cursor:pointer;
+        border-radius:6px;
+        margin-top:20px;
+        font-size:1rem;
+    }
+
+    button:hover {
+        background:#00acc1;
+    }
+
+    /* 📱 Vista móvil */
+    @media (max-width: 600px) {
+
+        table, thead, tbody, th, td, tr {
+            display:block;
+        }
+
+        thead {
+            display:none;
+        }
+
+        tr {
+            background:#222;
+            margin-bottom:12px;
+            padding:10px;
+            border-radius:8px;
+        }
+
+        td {
+            border:none;
+            text-align:left;
+            padding:6px 0;
+            font-size:0.9rem;
+        }
+
+        td::before {
+            content: attr(data-label);
+            font-weight:bold;
+            color:#26c6da;
+            display:block;
+            margin-bottom:3px;
+        }
+
+        input {
+            width:100%;
+        }
+
+        button {
+            font-size:1.1rem;
+        }
+    }
 </style>
 </head>
 
 <body>
 
 <h2>⚾ Ajustes de Equipos – Panel Seguro</h2>
-<p>Modifica los ajustes y presiona <b>Guardar</b>. El archivo adjustments.json se actualizará automáticamente.</p>
+<p>Modifica los ajustes y presiona <b>Guardar</b>.</p>
 
 <table id="tbl">
     <thead>
@@ -30,7 +132,6 @@
     <tbody></tbody>
 </table>
 
-<br>
 <button onclick="save()">Guardar cambios</button>
 
 <script>
@@ -44,15 +145,15 @@ fetch("adjustments.json")
         for (const [team, vals] of Object.entries(adj)) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${team}</td>
-                <td><input type="number" value="${vals[0]}" data-team="${team}" data-type="wins"></td>
-                <td><input type="number" value="${vals[1]}" data-team="${team}" data-type="losses"></td>
+                <td data-label="Equipo">${team}</td>
+                <td data-label="Ajuste Wins"><input type="number" value="${vals[0]}" data-team="${team}" data-type="wins"></td>
+                <td data-label="Ajuste Losses"><input type="number" value="${vals[1]}" data-team="${team}" data-type="losses"></td>
             `;
             tbody.appendChild(tr);
         }
     });
 
-// Guardar ajustes (Render lo recibe vía POST a un webhook)
+// Guardar ajustes
 function save() {
     const inputs = document.querySelectorAll("input");
     let updated = {};

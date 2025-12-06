@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Ranking HR</title>
+<style>
+body{font-family:Segoe UI,Arial;background:#0a0a0a;color:#fff;text-align:center;padding:20px;}
+h1{color:#ff004c;text-shadow:0 0 10px #ff004c,0 0 20px #ff004c;}
+table{width:100%;border-collapse:collapse;background:rgba(30,30,30,0.9);border-radius:12px;overflow:hidden;box-shadow:0 0 15px rgba(255,0,80,0.5);}th{background:#ff004c;padding:14px;}td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);}tr:nth-child(even){background:rgba(255,0,80,0.08);}tr:hover{background:rgba(255,0,80,0.22);} 
+
+/* ESTILOS PARA EL NOMBRE DEL JUGADOR (Cian) */
+.jugador-nombre {
+    font-size: 1.2rem;
+    color: #00ffff;
+    text-shadow: 0 0 8px #00ffff;
+    font-weight: bold;
+}
+
+/* ESTILOS PARA LA CANTIDAD DE HR (Naranja/Amarillo) */
+.hr-cantidad {
+    font-size: 1.3rem;
+    color: #ffaa00;
+    text-shadow: 0 0 10px #ffaa00;
+    font-weight: bolder;
+}
+
+/* Nuevo estilo para la leyenda de actualización */
+#last-update {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+@media(max-width:600px){
+    td,th{font-size:.85rem;padding:10px;}
+    .jugador-nombre{font-size: 1rem;}
+    .hr-cantidad{font-size: 1.1rem;}
+}
+</style>
+</head>
+<body>
+
+<script>
+const HR_RANKING_DATA = [
+    ["Ronals Acuña Jr", 3],
+    ["Ramon Laureano", 3],
+    ["Cody Bellinger", 3],
+        ["Fernando Tatis", 2],
+        ["Carlos Narvaez", 2],
+            ["Romy Gonzalez", 2],     
+    ["Austin Wells", 2],
+            ["George Springer", 2],
+            ["Adisson Barger", 2],
+    // AÑADE O MODIFICA JUGADORES A PARTIR DE AQUÍ:
+    // Ejemplo: ["Juan Soto", 5],
+    // Ejemplo: ["Vladimir Guerrero Jr.", 2]
+];
+</script>
+<h1>Ranking HR</h1>
+<table id="hr-table">
+    <tr><th>#</th><th>Jugador</th><th>HR</th></tr>
+    </table>
+
+<p id="last-update">
+    Última actualización (edición manual): <strong>01 de Diciembre de 2025, 19:55:00 (ET)</strong>
+</p>
+<script>
+// Obtiene la tabla y el cuerpo donde se insertarán las filas
+const table = document.getElementById('hr-table');
+
+// Genera las filas de la tabla
+HR_RANKING_DATA
+    // 1. Ordena los datos de mayor a menor HR
+    .sort((a, b) => b[1] - a[1])
+    // 2. Itera sobre los datos para crear las filas
+    .forEach((player, index) => {
+        const row = table.insertRow(-1); // Inserta la fila al final
+        const [name, hrs] = player;
+        const rank = index + 1;
+
+        // Celda #
+        let cellRank = row.insertCell(0);
+        cellRank.textContent = rank;
+
+        // Celda Jugador
+        let cellName = row.insertCell(1);
+        cellName.innerHTML = `<span class="jugador-nombre">${name}</span>`;
+
+        // Celda HR
+        let cellHR = row.insertCell(2);
+        cellHR.innerHTML = `<span class="hr-cantidad">${hrs}</span>`;
+    });
+
+// Nota: El código JavaScript para generar la fecha dinámica ha sido eliminado.
+</script>
+
+</body>
+</html>

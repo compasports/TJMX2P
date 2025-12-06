@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editor Ranking HR (Neon)</title>
+<style>
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #0a0a0a;
+        margin: 0;
+        padding: 20px;
+        color: #fff;
+    }
+    h1 {
+        font-size: 2rem;
+        color: #ff004c;
+        text-align: center;
+        text-shadow: 0 0 10px #ff004c, 0 0 20px #ff004c;
+    }
+    #editorBox {
+        background: rgba(20,20,20,0.8);
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(255,0,80,0.4);
+    }
+    input, button, select { /* Añadido 'select' */
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border: none;
+        box-sizing: border-box; /* Asegura que el padding no exceda el width */
+    }
+    button {
+        background: #ff004c;
+        color: white;
+        cursor: pointer;
+        text-shadow: 0 0 6px #ff004c;
+        box-shadow: 0 0 10px #ff004c;
+    }
+    button:hover {
+        background: #d10040;
+    }
+    /* Estilo específico para el botón de agregar nuevo */
+    #editorBox button:nth-of-type(1) { 
+        background: #00ffff;
+        color: #0a0a0a;
+        font-weight: bold;
+        text-shadow: none;
+        box-shadow: 0 0 10px #00ffff;
+    }
+    #editorBox button:nth-of-type(1):hover {
+        background: #00cccc;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(30,30,30,0.9);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 15px rgba(255,0,80,0.5);
+    }
+    th {
+        background: #ff004c;
+        padding: 14px;
+        font-size: 1rem;
+        color: #fff;
+        text-shadow: 0 0 8px #ff3c7f;
+    }
+    td {
+        padding: 12px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    tr:nth-child(even) {
+        background: rgba(255,0,80,0.05);
+    }
+    tr:hover {
+        background: rgba(255,0,80,0.2);
+    }
+    .editable:hover {
+        background: rgba(255,255,255,0.1);
+        cursor: pointer;
+    }
+    @media(max-width:600px){
+        h1 { font-size: 1.6rem; }
+        td,th { font-size: .85rem; padding: 10px; }
+    }
+</style>
+</head>
+<body>
+
+<h1>Editor Ranking HR</h1>
+
+<div id="editorBox">
+    <label>Jugador:</label>
+    <select id="playerSelect"></select>
+    <button onclick="promptNewPlayer()">Agregar nuevo jugador...</button>
+    
+    <label>HR:</label>
+    <input type="number" id="hr" value="0" min="0" />
+
+    <button onclick="addRow()">Agregar o actualizar HR</button>
+</div>
+
+<h3>Cargar archivo final (.html):</h3>
+<input type="file" id="fileInput" accept=".html" onchange="loadFinalFile()" />
+
+<br><br>
+
+<table>
+<thead>
+<tr>
+    <th>#</th>
+    <th>Jugador</th>
+    <th>HR</th>
+    <th>Eliminar</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+
+<br><br>
+<button onclick="generateFinal()">Generar versión final (NEON)</button>
+
+<script>
+let data = [];
+let playerList = []; // Lista para almacenar nombres únicos de jugadores
+
+// Inicializar la lista al cargar la página
+window.onload = function() {
+    renderPlayerSelect();
+};
+
+function renderPlayerSelect() {
+    const ps = document.getElementById("playerSelect");
+    ps.innerHTML = "";
+    // Ordenar la lista para facilitar la búsqueda
+    playerList.sort((a, b) => a.localeCompare(b));
+    
+    if (playerList.length === 0) {
+        ps.insertAdjacentHTML("beforeend", `<option value="" disabled selected>No hay jugadores...</option>`);
+    } else {
+        ps.insertAdjacentHTML("beforeend", `<option value="" disabled selected>-- Seleccionar Jugador --</option>`);
+        playerList.forEach(name => {
+            ps.insertAdjacentHTML("beforeend", `<option value="${name}">${name}</option>`);
+        });
+    }
+}
+
+function promptNewPlayer() {
+    let newPlayer = prompt("Ingresa el nombre del nuevo jugador:");
+    if (newPlayer) {
+        newPlayer = newPlayer.trim();
+        if (newPlayer === "") {
+            alert("El nombre no puede estar vacío.");
+            return;
+        }
+        
+        // Verificar si el nombre ya existe en la lista (comparación sin distinción de mayúsculas)
+        const lowerNewPlayer = newPlayer.toLowerCase();
+        
+        if (playerList.some(p => p.toLowerCase() === lowerNewPlayer)) {
+            alert(`El jugador "${newPlayer}" ya existe en la lista.`);
+            return;
+        }
+        
+        // Agregar a la lista y re-renderizar
+        playerList.push(newPlayer);
+        renderPlayerSelect();
+        
+        // Seleccionar automáticamente el jugador recién agregado
+        document.getElementById("playerSelect").value = newPlayer;
+    }
+}
+
+function addRow(){
+    let pSelect = document.getElementById("playerSelect");
+    let p = pSelect.value; // Obtener el nombre del jugador seleccionado
+    let h = parseInt(document.getElementById("hr").value);
+    
+    if(!p){ 
+        alert("Selecciona un jugador de la lista."); 
+        return; 
+    }
+
+    const lowerP = p.toLowerCase();
+    
+    // Buscar si el jugador ya existe en la tabla de datos
+    let existingItem = data.find(item => item.player.toLowerCase() === lowerP);
+
+    if (existingItem) {
+        // Si ya existe, actualiza el HR y avisa
+        let oldHr = existingItem.hr;
+        existingItem.hr = h;
+        alert(`HR de ${p} actualizado de ${oldHr} a ${h}.`);
+    } else {
+        // Si no existe, lo agrega como un nuevo registro en la tabla
+        data.push({player: p, hr: h});
+        alert(`Jugador ${p} con HR ${h} agregado.`);
+    }
+    
+    // Restablecer el valor de los campos de entrada/selección
+    pSelect.value = "";
+    document.getElementById("hr").value = 0;
+    
+    renderTable();
+}
+
+function renderTable(){
+    const tb=document.getElementById("tableBody");
+    tb.innerHTML="";
+    data.sort((a,b)=>b.hr-a.hr);
+    
+    // Asegurar que playerList contenga todos los nombres de 'data'
+    data.forEach(item => {
+        const lowerName = item.player.toLowerCase();
+        if (!playerList.some(p => p.toLowerCase() === lowerName)) {
+            playerList.push(item.player);
+        }
+    });
+    
+    // Re-renderizar el select para reflejar posibles cambios
+    renderPlayerSelect(); 
+    
+    data.forEach((item,i)=>{
+        tb.insertAdjacentHTML("beforeend",
+        `<tr>
+            <td>${i+1}</td>
+            <td class='editable' data-i='${i}' data-f='player'>${item.player}</td>
+            <td class='editable' data-i='${i}' data-f='hr'>${item.hr}</td>
+            <td><button onclick='delRow(${i})' style="background:#333">🗑</button></td>
+        </tr>`);
+    });
+    enableEditing();
+}
+
+function enableEditing(){
+    document.querySelectorAll('.editable').forEach(c=>{
+        c.onclick=function(){
+            let i=this.dataset.i;
+            let f=this.dataset.f;
+            let v=this.innerText;
+            let inp=document.createElement('input');
+            inp.value=v;
+            if(f=='hr') inp.type='number';
+            this.innerHTML='';
+            this.appendChild(inp);
+            inp.focus();
+            inp.onblur=()=>saveEdit(i,f,inp.value);
+            inp.onkeydown=e=>{ if(e.key==='Enter') saveEdit(i,f,inp.value); };
+        }
+    });
+}
+
+function saveEdit(i,f,v){ 
+    if (f === 'player') {
+        const oldName = data[i].player;
+        const newName = v.trim();
+        if (newName === "") {
+            alert("El nombre no puede estar vacío.");
+            renderTable();
+            return;
+        }
+
+        // 1. Actualizar el nombre en playerList (si estaba presente)
+        const playerIndex = playerList.findIndex(p => p === oldName);
+        if (playerIndex > -1) {
+            playerList[playerIndex] = newName;
+        } else {
+             // Si no estaba en playerList (lo cual no debería pasar si la lógica es correcta), lo añade
+             const lowerNewName = newName.toLowerCase();
+             if (!playerList.some(p => p.toLowerCase() === lowerNewName)) {
+                  playerList.push(newName);
+             }
+        }
+        
+        data[i][f] = newName;
+        
+    } else {
+        data[i][f] = f==='hr'?parseInt(v)||0: v; 
+    }
+    
+    renderTable(); 
+}
+
+function delRow(i){ 
+    if(confirm("Eliminar jugador?")){
+        // NOTA: Se mantiene el nombre en playerList para poder reingresar los HRs si es un error.
+        data.splice(i,1); 
+    } 
+    renderTable(); 
+}
+
+function loadFinalFile(){
+    let file=document.getElementById("fileInput").files[0];
+    if(!file){ alert("No seleccionaste archivo"); return; }
+    let r=new FileReader();
+    r.onload=()=>{
+        const parser=new DOMParser();
+        const doc=parser.parseFromString(r.result,"text/html");
+        let table=doc.querySelector("table");
+        if(!table){ alert("Archivo final inválido"); return; }
+        let rows=[...table.querySelectorAll("tr")].slice(1);
+        data=rows.map(tr=>{
+            let c=tr.querySelectorAll("td");
+            return { player:c[1].innerText.trim(), hr:parseInt(c[2].innerText.trim()) };
+        });
+        
+        // Cargar playerList desde los datos del archivo, asegurando unicidad
+        playerList = [...new Set(data.map(item => item.player))];
+
+        renderTable();
+        alert("Datos cargados ✔");
+    }
+    r.readAsText(file);
+}
+
+function generateFinal(){
+    let rows="";
+    data.sort((a,b)=>b.hr-a.hr).forEach((r,i)=>{
+        // Se añaden las clases 'jugador-nombre' y 'hr-cantidad'
+        rows+=`<tr><td>${i+1}</td><td class="jugador-nombre">${r.player}</td><td class="hr-cantidad">${r.hr}</td></tr>`;
+    });
+
+    let html=`<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Ranking HR</title>
+<style>
+body{font-family:Segoe UI,Arial;background:#0a0a0a;color:#fff;text-align:center;padding:20px;}
+h1{color:#ff004c;text-shadow:0 0 10px #ff004c,0 0 20px #ff004c;}
+table{width:100%;border-collapse:collapse;background:rgba(30,30,30,0.9);border-radius:12px;overflow:hidden;box-shadow:0 0 15px rgba(255,0,80,0.5);}th{background:#ff004c;padding:14px;}td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);}tr:nth-child(even){background:rgba(255,0,80,0.08);}tr:hover{background:rgba(255,0,80,0.22);} 
+
+/* ESTILOS PARA EL NOMBRE DEL JUGADOR (Cian) */
+.jugador-nombre {
+    font-size: 1.2rem;
+    color: #00ffff;
+    text-shadow: 0 0 8px #00ffff;
+    font-weight: bold;
+}
+
+/* ESTILOS PARA LA CANTIDAD DE HR (Naranja/Amarillo) */
+.hr-cantidad {
+    font-size: 1.3rem;
+    color: #ffaa00;
+    text-shadow: 0 0 10px #ffaa00;
+    font-weight: bolder;
+}
+
+@media(max-width:600px){
+    td,th{font-size:.85rem;padding:10px;}
+    .jugador-nombre{font-size: 1rem;}
+    .hr-cantidad{font-size: 1.1rem;}
+}
+</style>
+</head>
+<body>
+<h1>Ranking HR</h1>
+<table>
+<tr><th>#</th><th>Jugador</th><th>HR</th></tr>
+${rows}
+</table>
+</body>
+</html>`;
+
+    let blob=new Blob([html],{type:"text/html"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="ranking_final.html";
+    a.click();
+}
+</script>
+
+</body>
+</html>

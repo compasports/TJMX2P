@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel de Ajustes MLB</title>
+<style>
+    body { background:#1a1a1a; color:white; font-family:Arial; padding:20px; }
+    h2 { color:#26c6da; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #555; padding:10px; text-align:center; }
+    input { width:80px; padding:4px; }
+    button { padding:10px 20px; background:#26c6da; border:none; color:black; font-weight:bold; cursor:pointer; }
+    button:hover { background:#00acc1; }
+</style>
+</head>
+
+<body>
+
+<h2>⚾ Ajustes de Equipos – Panel Seguro</h2>
+<p>Modifica los ajustes y presiona <b>Guardar</b>. El archivo adjustments.json se actualizará automáticamente.</p>
+
+<table id="tbl">
+    <thead>
+        <tr>
+            <th>Equipo</th>
+            <th>Ajuste Wins</th>
+            <th>Ajuste Losses</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<br>
+<button onclick="save()">Guardar cambios</button>
+
+<script>
+// Cargar ajustes
+fetch("adjustments.json")
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.querySelector("#tbl tbody");
+        const adj = data.TEAM_RECORD_ADJUSTMENTS;
+
+        for (const [team, vals] of Object.entries(adj)) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${team}</td>
+                <td><input type="number" value="${vals[0]}" data-team="${team}" data-type="wins"></td>
+                <td><input type="number" value="${vals[1]}" data-team="${team}" data-type="losses"></td>
+            `;
+            tbody.appendChild(tr);
+        }
+    });
+
+// Guardar ajustes (Render lo recibe vía POST a un webhook)
+function save() {
+    const inputs = document.querySelectorAll("input");
+    let updated = {};
+
+    inputs.forEach(i => {
+        const team = i.dataset.team;
+        const type = i.dataset.type;
+        if (!updated[team]) updated[team] = [0, 0];
+        if (type === "wins") updated[team][0] = parseInt(i.value);
+        if (type === "losses") updated[team][1] = parseInt(i.value);
+    });
+
+    const payload = {
+        TEAM_RECORD_ADJUSTMENTS: updated,
+        TEAM_POINT_ADJUSTMENTS: {}
+    };
+
+    fetch("/update-adjustments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.text())
+    .then(() => alert("✅ Ajustes guardados exitosamente"))
+    .catch(() => alert("❌ Error al guardar ajustes"));
+}
+</script>
+
+</body>
+</html>

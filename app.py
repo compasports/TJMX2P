@@ -1,7 +1,18 @@
 from flask import Flask, render_template, jsonify, request
 import json
 import os
+
+
+
 from datetime import datetime
+
+from flask import send_from_directory
+
+
+
+
+
+
 
 app = Flask(__name__)
 CACHE_FILE = "standings_cache.json"
@@ -53,6 +64,14 @@ def api_full():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": f"Failed to read cached data: {e}"}), 500
+
+
+
+
+@app.route("/adjustments.json")
+def serve_adjustments():
+    return send_from_directory(".", "adjustments.json")
+
 
 
 

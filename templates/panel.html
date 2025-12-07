@@ -28,6 +28,34 @@
         color:#bbb;
     }
 
+    /* Combobox */
+    #teamSelector {
+        width:100%;
+        padding:10px;
+        font-size:1rem;
+        border-radius:6px;
+        margin-top:10px;
+        background:#222;
+        color:white;
+        border:1px solid #555;
+    }
+
+    #gotoEndBtn {
+        width:100%;
+        padding:10px;
+        background:#4caf50;
+        border:none;
+        color:black;
+        font-weight:bold;
+        border-radius:6px;
+        margin-top:12px;
+        cursor:pointer;
+    }
+
+    #gotoEndBtn:hover {
+        background:#43a047;
+    }
+
     table {
         width:100%;
         border-collapse:collapse;
@@ -55,7 +83,7 @@
         text-align:center;
     }
 
-    button {
+    button.save-btn {
         width:100%;
         padding:12px;
         background:#26c6da;
@@ -68,7 +96,7 @@
         font-size:1rem;
     }
 
-    button:hover {
+    button.save-btn:hover {
         background:#00acc1;
     }
 
@@ -109,7 +137,7 @@
             width:100%;
         }
 
-        button {
+        button.save-btn {
             font-size:1.1rem;
         }
     }
@@ -119,7 +147,14 @@
 <body>
 
 <h2>⚾ Ajustes de Equipos – Panel Seguro</h2>
-<p>Modifica los ajustes y presiona <b>Guardar</b>.</p>
+
+<p>Selecciona un equipo para ir directo a su línea.</p>
+
+<select id="teamSelector">
+    <option value="">Buscar equipo...</option>
+</select>
+
+<button id="gotoEndBtn">⬇ Ir al final (Guardar cambios)</button>
 
 <table id="tbl">
     <thead>
@@ -132,26 +167,74 @@
     <tbody></tbody>
 </table>
 
-<button onclick="save()">Guardar cambios</button>
+<button class="save-btn" onclick="save()">Guardar cambios</button>
 
 <script>
+let teamRows = {}; // Guardará referencia a cada fila
+
 // Cargar ajustes
 fetch("adjustments.json")
     .then(r => r.json())
     .then(data => {
         const tbody = document.querySelector("#tbl tbody");
+        const selector = document.getElementById("teamSelector");
+
         const adj = data.TEAM_RECORD_ADJUSTMENTS;
 
         for (const [team, vals] of Object.entries(adj)) {
+
+            // Agregar al combo
+            const op = document.createElement("option");
+            op.value = team;
+            op.textContent = team;
+            selector.appendChild(op);
+
+            // Crear fila
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td data-label="Equipo">${team}</td>
-                <td data-label="Ajuste Wins"><input type="number" value="${vals[0]}" data-team="${team}" data-type="wins"></td>
-                <td data-label="Ajuste Losses"><input type="number" value="${vals[1]}" data-team="${team}" data-type="losses"></td>
+                <td data-label="Ajuste Wins"><input type="number" value="${vals[0]}" data-team="${team}" data-type="wins" class="wins"></td>
+                <td data-label="Ajuste Losses"><input type="number" value="${vals[1]}" data-team="${team}" data-type="losses" class="losses"></td>
             `;
+
             tbody.appendChild(tr);
+
+            // Guardar referencia para scroll luego
+            teamRows[team] = tr;
         }
     });
+
+// Cuando se selecciona un equipo en el combo
+document.getElementById("teamSelector").addEventListener("change", function () {
+    const team = this.value;
+    if (!team) return;
+
+    const row = teamRows[team];
+    if (!row) return;
+
+    // Hacer scroll hacia la fila
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Esperar que el scroll termine y enfocar Wins
+    setTimeout(() => {
+        const inputWins = row.querySelector(".wins");
+        inputWins.focus();
+        inputWins.select();
+    }, 400);
+
+    // Cuando se modifique un input, volver al combobox
+    const inputs = row.querySelectorAll("input");
+    inputs.forEach(i => {
+        i.addEventListener("change", () => {
+            document.getElementById("teamSelector").focus();
+        });
+    });
+});
+
+// Botón para ir al final de la pantalla
+document.getElementById("gotoEndBtn").addEventListener("click", () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+});
 
 // Guardar ajustes
 function save() {

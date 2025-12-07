@@ -170,6 +170,7 @@
 <button class="save-btn" onclick="save()">Guardar cambios</button>
 
 <script>
+
 let teamRows = {}; // Guardará referencia a cada fila
 
 // Cargar ajustes
@@ -215,19 +216,33 @@ document.getElementById("teamSelector").addEventListener("change", function () {
     // Hacer scroll hacia la fila
     row.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    // Esperar que el scroll termine y enfocar Wins
+    const winsInput = row.querySelector(".wins");
+    const lossesInput = row.querySelector(".losses");
+
+    // Enfocar WIN automáticamente
     setTimeout(() => {
-        const inputWins = row.querySelector(".wins");
-        inputWins.focus();
-        inputWins.select();
+        winsInput.focus();
+        winsInput.select();
     }, 400);
 
-    // Cuando se modifique un input, volver al combobox
-    const inputs = row.querySelectorAll("input");
-    inputs.forEach(i => {
-        i.addEventListener("change", () => {
+    // Detectar modificaciones en ambos campos
+    let winsChanged = false;
+    let lossesChanged = false;
+
+    const checkBothEdited = () => {
+        if (winsChanged && lossesChanged) {
             document.getElementById("teamSelector").focus();
-        });
+        }
+    };
+
+    winsInput.addEventListener("change", () => {
+        winsChanged = true;
+        checkBothEdited();
+    });
+
+    lossesInput.addEventListener("change", () => {
+        lossesChanged = true;
+        checkBothEdited();
     });
 });
 

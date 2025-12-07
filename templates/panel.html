@@ -28,7 +28,6 @@
         color:#bbb;
     }
 
-    /* Combobox */
     #teamSelector {
         width:100%;
         padding:10px;
@@ -100,9 +99,7 @@
         background:#00acc1;
     }
 
-    /* 📱 Vista móvil */
     @media (max-width: 600px) {
-
         table, thead, tbody, th, td, tr {
             display:block;
         }
@@ -171,10 +168,10 @@
 
 <script>
 
-let teamRows = {}; // Guardará referencia a cada fila
+let teamRows = {};
 
-// Cargar ajustes
-fetch("adjustments.json")
+// 🚀 Cargar ajustes SIEMPRE desde Render (no GitHub, no caché)
+fetch("/adjustments.json?cache=" + Date.now())
     .then(r => r.json())
     .then(data => {
         const tbody = document.querySelector("#tbl tbody");
@@ -184,13 +181,11 @@ fetch("adjustments.json")
 
         for (const [team, vals] of Object.entries(adj)) {
 
-            // Agregar al combo
             const op = document.createElement("option");
             op.value = team;
             op.textContent = team;
             selector.appendChild(op);
 
-            // Crear fila
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td data-label="Equipo">${team}</td>
@@ -199,13 +194,11 @@ fetch("adjustments.json")
             `;
 
             tbody.appendChild(tr);
-
-            // Guardar referencia para scroll luego
             teamRows[team] = tr;
         }
     });
 
-// Cuando se selecciona un equipo en el combo
+// Selección de equipo
 document.getElementById("teamSelector").addEventListener("change", function () {
     const team = this.value;
     if (!team) return;
@@ -213,19 +206,16 @@ document.getElementById("teamSelector").addEventListener("change", function () {
     const row = teamRows[team];
     if (!row) return;
 
-    // Hacer scroll hacia la fila
     row.scrollIntoView({ behavior: "smooth", block: "center" });
 
     const winsInput = row.querySelector(".wins");
     const lossesInput = row.querySelector(".losses");
 
-    // Enfocar WIN automáticamente
     setTimeout(() => {
         winsInput.focus();
         winsInput.select();
     }, 400);
 
-    // Detectar modificaciones en ambos campos
     let winsChanged = false;
     let lossesChanged = false;
 
@@ -246,7 +236,7 @@ document.getElementById("teamSelector").addEventListener("change", function () {
     });
 });
 
-// Botón para ir al final de la pantalla
+// Botón para ir al final
 document.getElementById("gotoEndBtn").addEventListener("click", () => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 });
